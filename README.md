@@ -1,92 +1,66 @@
-# EcoBox — God Sandbox Mini (Prototipe Ekosistem)
+# EcoBox — Konteks Repositori untuk Agen AI
 
-Game sandbox "jadi Tuhan" ala WorldBox, versi mini untuk **1 orang, HP Android 4GB/128GB, modal Rp0**.
-Prototipe playable ada di [`index.html`](index.html) — 1 file, tanpa install, tanpa engine, tanpa aset berbayar.
+Repositori ini berisi kerangka dan prototipe game god-sandbox ekosistem (inspirasi genre WorldBox, bukan klon 1:1). File ini dibaca oleh agen AI yang akan melanjutkan pengembangan. Baca seluruh file sebelum menulis atau mengubah kode.
 
-> Cara main: buka `index.html` di browser HP (atau deploy gratis, lihat bawah). Pilih tool di bawah,
-> sentuh/seret untuk melukis tanah & spawn makhluk. Domba makan rumput → serigala makan domba →
-> manusia makan domba & menebang hutan. Api menyebar, meteor menghancurkan, hujan memadamkan.
+## Tujuan
 
----
+- Membangun game simulasi ekosistem sandbox tempat pemain berperan sebagai "Tuhan" yang mencipta, mengatur, dan menghancurkan dunia.
+- Target perangkat utama: satu HP Android dengan RAM 4GB dan penyimpanan 128GB, tanpa modal (Rp0).
+- Fase 1: Web HTML5 + Canvas untuk validasi gameplay di browser HP.
+- Fase 2: Port ke Godot 4 (GDScript) untuk export APK Android native.
+- Unity ditunda karena editor terlalu berat untuk perangkat 4GB.
+- Google AI Studio digunakan hanya sebagai asisten coding dan ide, bukan sebagai game engine.
 
-## 1. Relevan nggak bikin game seperti WorldBox?
+## Aturan
 
-**Relevan sebagai inspirasi & genre, TIDAK relevan sebagai target clone 1:1.**
+- Satu tanggung jawab = satu file. Contoh: 1 spesies = 1 file, 1 tool = 1 file, 1 panel UI = 1 file, 1 sistem = 1 file.
+- Semua kode game ada di folder `src/`, dikelompokkan per modul (`core`, `world`, `entities`, `systems`, `tools`, `ui`, `render`, `audio`, `save`, `i18n`, `data`, dll).
+- `index.html` hanya berfungsi sebagai entry point dan pemuat modul (`src/main.js`). Jangan menuliskan logika game di dalam `index.html`.
+- Konstanta dan pengaturan global dikumpulkan di folder `config/` (`game.config.json`, `balance.json`, `feature-flags.json`).
+- Data murni (angka balancing, definisi spesies, ras, item, sihir, trait) disimpan di `src/data/*.json` agar mudah diubah tanpa sentuh kode.
+- Setiap fitur baru ditambah dengan menambah file baru dan mendaftarkannya di `registry.js` atau `factory.js` yang sesuai. Jangan merusak atau menulis ulang file yang sudah ada kecuali diperbaiki bug.
+- Dukung bahasa Indonesia dan English melalui folder `src/i18n/`.
+- Simulasi berjalan berbasis tick (bukan per frame) untuk hemat baterai dan RAM di HP kentang.
 
-| Fakta WorldBox | Artinya buat kamu |
-|---|---|
-| Dibuat Maxim Karpenko, mulai **2011 sebagai prototipe Flash di browser**, rilis Newgrounds 2012, iOS 2018, Android 2019, Steam 2019/2021. Engine: **Unity (C#)**. | Jalur suksesnya = *mulai kecil di browser, iterasi bertahun-tahun*, bukan langsung bikin AAA. Kamu bisa meniru jalurnya. |
-| Versi sekarang **0.51.4 (Mei 2026)** — changelog-nya ribuan baris: puluhan ras, trait, bencana, kota, perang, UFO, dll. | Itu hasil **14 tahun** kerja. Target MVP kamu harus dipotong 95%: 1 map, 3 spesies, 5 bencana. |
-| Genre "god sandbox / ekosistem eksperimen" terbukti laku di PC + Android + iOS + Steam. | Pasar ada. Yang membedakan bukan grafis, tapi *sistem yang terasa hidup* (rantai makanan, reproduksi, bencana). |
+## Larangan
 
-Kesimpulan: **bangun "WorldBox versi mini", bukan "WorldBox versi kecil".** Bedanya: sistem dulu, konten belakangan.
+- Emoji/Emoticon dilarang digunakan sebagai ikon atau sprite dalam game. Gunakan gambar ikon (PNG/SVG) atau ilustrasi vektor gratis, bukan emoji.
+- Jangan menggunakan React, Next.js, Angular, atau framework web lain sebagai engine game. Ini bukan aplikasi web biasa, ini game.
+- Jangan mengkloning WorldBox 1:1. Ambil inspirasi dari genre god-sandbox, lalu buat versi mini dengan cakupan yang sesuai kondisi solo developer dan perangkat rendah.
+- Jangan menggunakan Unity di Fase 1 dan Fase 2 karena editor terlalu berat untuk HP 4GB.
+- Jangan menambahkan dependensi berbayar atau yang memerlukan kartu kredit. Semua tool dan deploy harus gratis.
+- Jangan menyimpan kredensial, API key, atau rahasia dalam repositori ini.
 
-## 2. "Pake Google Studio" — perlu diluruskan
+## Stack Teknologi yang Disetujui
 
-Ada 3 hal yang sering tertukar:
+| Fase | Teknologi | Keterangan |
+|------|-----------|------------|
+| Fase 0–1 | HTML5 Canvas + Vanilla JavaScript | Tidak perlu install, jalan di browser HP, gratis |
+| Fase 2 | Godot 4 (GDScript) | Editor ringan, APK kecil, gratis, cocok 2D mobile |
+| Fase 4 | itch.io → Google Play Store | Deploy gratis, biaya Pendaftar Play $25 sekali seumur hidup |
 
-| Nama | Apa itu | Relevan buat game? |
-|---|---|---|
-| **Google AI Studio** (`aistudio.google.com`) | Playground gratis untuk model **Gemini**: test prompt, ambil API key, prototyping app AI dari browser. **Bukan game engine.** | ✅ Relevan sebagai **asisten coding gratis** (generate kode, ide sprite, tuning balance). ❌ Tidak bisa render game / export APK. |
-| **Android Studio** | IDE resmi Google untuk app Android native (Kotlin/Java). Berat, butuh PC. | ❌ Tidak perlu untuk game 2D. |
-| **Game engine** (Godot/Unity/dll) | Mesin yang me-render dunia, fisika, input, export APK. | ✅ Ini yang kamu butuhkan. |
+## Struktur Repositori Singkat
 
-Jadi: **Google AI Studio = alat bantu, bukan framework game.** Pakai untuk mempercepat coding, bukan untuk membangun gamenya.
+- `src/` — semua kode game modular
+- `config/` — konfigurasi dan balance terpusat
+- `docs/` — ROADMAP, DESIGN, BALANCE, PERFORMANCE, TECH_STACK, MODDING
+- `assets/` — aset mentah (sprite, audio, fonts, particles), bukan kode
+- `godot/` — persiapan port Godot 4 (Fase 3)
+- `tests/` — unit, integration, perf, checklist manual
+- `tools/` — script bantu development (bukan bagian runtime game)
+- `.github/workflows/ci.yml` — CI otomatis cek sintaks JavaScript
 
-## 3. Framework yang cocok untuk kondisi kamu
+## Panduan untuk Agen AI yang Akan Membangun
 
-Kondisi: solo, HP 4GB RAM / 128GB storage, modal Rp0. Editor Unity butuh RAM ≥8GB dan instalasi beberapa GB — di HP 4GB itu praktis tidak bisa. Godot editor ~50–150MB dan bisa jalan di RAM 4GB. Web (HTML5) paling ringan: nol install.
+1. Baca `docs/ROADMAP.md`, `docs/DESIGN.md`, dan `docs/BALANCE.md` sebelum menulis fitur baru.
+2. Lihat `src/tools/registry.js` dan `src/entities/factory.js` untuk mengetahui cara mendaftarkan tool dan spesies baru.
+3. Jika menambah fitur, buat file baru di folder yang sesuai, lalu daftarkan di registry/factory. Jangan menumpuk logika baru ke file yang sudah ada.
+4. Uji perubahan dengan membuka `index.html` di browser HP atau desktop. Pastikan tidak ada error merah di konsol browser.
+5. Jika bekerja pada port Godot 4, lihat `godot/README.md` untuk peta pemindahan file dari `src/` ke scene/script Godot.
 
-| Kriteria | 🌐 Web HTML5 + Canvas (dipakai prototipe ini) | 🎮 Godot 4 (GDScript) | 🕹️ Unity 6 (C#) |
-|---|---|---|---|
-| Jalan di HP 4GB? | ✅ Browser saja, <50MB RAM | ✅ Editor ~100MB, APK ~25–35MB | ❌ Editor butuh ≥8GB RAM, install GB-an |
-| Biaya | Rp0, deploy gratis | Rp0 (MIT, tanpa royalti) | Gratis tier, tapi berat |
-| Export Android | Via WebView/Capacitor (gratis) atau PWA | ✅ Native APK langsung | ✅ Native, tapi build lambat di HP |
-| Cocok untuk | **Fase 1: validasi gameplay** | **Fase 2: rilis Android** | Fase 3+ (kalau sudah ada PC) |
-| Aset | Emoji = sprite gratis | Sprite sendiri / gratis | Asset Store |
+## Status Saat Ini
 
-### Rekomendasi: 2 fase
-
-```
-Fase 1 (sekarang, di HP)   : Web HTML5 — prototipe ini. Deploy gratis, test langsung di browser HP.
-Fase 2 (kalau gameplay seru): Port ke Godot 4 — export APK native ~25MB, rilis Play Store.
-Fase 3 (nanti)             : Steam via Godot/Unity kalau sudah ada PC & modal $100.
-```
-
-Kenapa tidak langsung Godot? Karena di HP, iterasi web (edit → refresh → main) jauh lebih cepat daripada
-install editor + export template + build APK tiap perubahan. Validasi dulu "seru atau tidak", baru kemas jadi APK.
-
-## 4. Roadmap MVP (solo, HP-only)
-
-- [x] **Fase 0 — Prototipe** (`index.html`): grid tanah/air/gunung/hutan, 3 spesies + rantai makanan, api/meteor/hujan, counter populasi.
-- [ ] **Fase 1 — Sistem**: musim & siklus hari, penyakit, umur & generasi, rumah/kota sederhana, save/load (localStorage).
-- [ ] **Fase 2 — Konten**: +2 spesies (mis. ayam, naga), trait acak, bencana baru (gempa, tornado), suara efek (gratis dari freesound).
-- [ ] **Fase 3 — Godot**: port logika `index.html` → Godot 4, export APK, test di HP sendiri.
-- [ ] **Fase 4 — Rilis**: itch.io (gratis) → Play Store ($25 sekali bayar, kumpulkan dulu dari donasi/iklan web).
-
-**Aturan performa untuk HP 4GB:** batasi entitas (prototipe: 260), AI jalan 10x/detik bukan tiap frame,
-tanpa aset gambar besar (emoji/atlas kecil), APK target <50MB.
-
-## 5. Cara jalanin & deploy gratis (modal Rp0)
-
-```bash
-# lokal: buka langsung
-#   buka index.html di browser HP, atau:
-python3 -m http.server 8000   # lalu buka http://localhost:8000
-```
-
-Deploy gratis (pilih satu): **GitHub Pages** (repo ini), **Netlify Drop**, **Vercel**, atau **itch.io** (upload zip HTML5).
-Semua Rp0 dan bisa dibuka langsung di browser HP pemain — tanpa install APK.
-
-## 6. Workflow HP-only + AI gratis
-
-1. **Coding:** edit `index.html` langsung di HP (browser/Termux) atau via GitHub web editor.
-2. **AI assistant:** Google AI Studio (Gemini) untuk generate/refactor kode, ide balance, teks UI — gratis, tanpa kartu kredit.
-3. **Aset:** emoji + warna flat (Rp0). Nanti: generate sprite via AI Studio, atau unduh aset gratis (Kenney.nl, OpenGameArt).
-4. **Musik/SFX:** freesound.org / Kenney audio (gratis, cek lisensi).
-
-## Referensi
-- WorldBox — situs resmi & changelog: https://www.superworldbox.com/ · https://www.superworldbox.com/changelog
-- WorldBox (Wikipedia/Wikiwand): engine Unity, mulai 2011 Flash → 2012 Newgrounds → 2018 iOS → 2019 Android/Steam.
-- Google AI Studio: https://aistudio.google.com — playground Gemini, bukan game engine.
-- Godot vs Unity (ukuran editor/APK, RAM minimum): editor Godot ~50–150MB & RAM min 4GB vs Unity beberapa GB & ≥8GB.
+- Prototipe web awal sudah ada (commit awal).
+- Struktur modular versi ambisius sudah di-scaffold (semua folder dan file kerangka siap).
+- Beberapa modul masih berupa stub kosong yang siap diisi logika aslinya oleh agen AI berikutnya.
+- Pull Request #2 terbuka dari branch `arena/cee001c4-game-s` ke `main`, belum di-merge.
