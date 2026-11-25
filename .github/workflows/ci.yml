@@ -1,0 +1,21 @@
+name: CI EcoBox
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cek sintaks JavaScript
+        run: |
+          node --check src/main.js
+          node --check src/core/config.js
+          node --check src/core/utils.js
+          node --check src/core/bus.js
+          node --check src/core/scheduler.js
+          echo "JS SYNTAX OK"
+      - name: Cek file wajib ada
+        run: |
+          test -f index.html && echo "index.html OK"
+          test -f README.md && echo "README.md OK"

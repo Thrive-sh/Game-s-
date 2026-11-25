@@ -1,0 +1,18 @@
+{
+  "gridWidth": 56,
+  "gridHeight": 36,
+  "tickRate": 10,
+  "maxEntities": 260,
+  "simSpeed": [1, 2, 4],
+  "defaultSpeed": 1,
+  "tileSize": 20,
+  "colors": {
+    "deepWater": "#1e3a8a",
+    "water": "#3b82f6",
+    "sand": "#eab308",
+    "grass": "#22c55e",
+    "forest": "#166534",
+    "mountain": "#64748b",
+    "fire": "#ef4444"
+  }
+}

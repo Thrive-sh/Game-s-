@@ -1,0 +1,17 @@
+{
+  "app.title": "EcoBox",
+  "app.newWorld": "Dunia Baru",
+  "app.pause": "Jeda",
+  "app.speed": "Kecepatan",
+  "ui.population": "Populasi",
+  "ui.day": "Hari",
+  "ui.sheep": "Domba",
+  "ui.wolf": "Serigala",
+  "ui.human": "Manusia",
+  "tool.brush": "Lukis Tanah",
+  "tool.spawn": "Spawn",
+  "tool.disaster": "Bencana",
+  "msg.sheepExtinct": "Domba punah!",
+  "msg.worldSaved": "Dunia tersimpan",
+  "msg.worldLoaded": "Dunia dimuat"
+}

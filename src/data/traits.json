@@ -1,0 +1,8 @@
+{
+  "strong": { "hpBonus": 20 },
+  "fast": { "speedBonus": 0.3 },
+  "greedy": { "hungerRate": 1.5 },
+  "social": { "reproduceBonus": 0.2 },
+  "peaceful": { "aggression": 0 },
+  "aggressive": { "aggression": 1 }
+}

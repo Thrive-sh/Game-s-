@@ -1,0 +1,6 @@
+{
+  "heal": { "name": "Sembuhkan", "cost": 10 },
+  "curse": { "name": "Kutuk", "cost": 15 },
+  "bless": { "name": "Berkat", "cost": 20 },
+  "transform": { "name": "Ubah Bentuk", "cost": 30 }
+}
