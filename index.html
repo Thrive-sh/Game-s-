@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>EcoBox — God Sandbox Mini (Prototipe)</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;background:#0b1a12;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#eafff0}
+  #wrap{display:flex;flex-direction:column;height:100dvh}
+  header{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#12291b;border-bottom:1px solid #1f4d33;flex-wrap:wrap}
+  header b{font-size:15px}
+  .pill{background:#1b3d28;border:1px solid #2c5c40;border-radius:999px;padding:3px 9px;font-size:12px;white-space:nowrap}
+  .pill span{font-weight:800;color:#7CFC9A}
+  #stage{flex:1;position:relative;min-height:0}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+  #toolbar{display:flex;gap:6px;overflow-x:auto;padding:8px;background:#12291b;border-top:1px solid #1f4d33;scrollbar-width:none}
+  #toolbar::-webkit-scrollbar{display:none}
+  .tool{flex:0 0 auto;min-width:58px;padding:7px 6px 5px;border-radius:12px;border:2px solid #244d35;background:#1a3524;color:#eafff0;font-size:11px;text-align:center;cursor:pointer;line-height:1.25}
+  .tool .ic{font-size:20px;display:block}
+  .tool.on{border-color:#7CFC9A;background:#245c3a;box-shadow:0 0 0 2px #7CFC9A33}
+  #hint{padding:5px 10px;font-size:11.5px;color:#a8d8b8;background:#0e2116;text-align:center}
+  button.mini{background:#1b3d28;color:#eafff0;border:1px solid #2c5c40;border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <b>🌍 EcoBox <small style="font-weight:400;color:#a8d8b8">mini god-sandbox</small></b>
+    <div class="pill">🐑 <span id="cSheep">0</span></div>
+    <div class="pill">🐺 <span id="cWolf">0</span></div>
+    <div class="pill">🧑 <span id="cHuman">0</span></div>
+    <div class="pill">⏱️ Hari <span id="cDay">1</span></div>
+    <button class="mini" id="btnPause">⏸️ Jeda</button>
+    <button class="mini" id="btnSpeed">▶️ 1x</button>
+    <button class="mini" id="btnNew">🗺️ Dunia Baru</button>
+  </header>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <div id="hint">Sentuh / klik untuk memakai tool • Seret untuk melukis tanah • Domba makan rumput → serigala makan domba → manusia makan domba & menebang hutan</div>
+  <div id="toolbar"></div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   EcoBox — prototipe ekosistem god-sandbox (1 file, tanpa engine)
+   Dibuat untuk HP 4GB: tanpa install, tanpa aset, emoji = sprite.
+   Logika sengaja dipisah (tick dunia vs render) supaya gampang
+   di-port ke Godot 4 nanti. Lihat README.md untuk roadmap.
+   ============================================================ */
+const COLS = 56, ROWS = 36;          // ukuran grid dunia
+const TILE = { DEEP:0, WATER:1, SAND:2, GRASS:3, FOREST:4, MOUNT:5, FIRE:6 };
+const TILE_COLOR = ["#14507a","#1f7ab8","#e8d28a","#5fbf4a","#2f8f3a","#8a8d91","#ff6b1a"];
+const MAX_ENT = 260;                  // batas entitas: jaga RAM HP kentang
+
+let grid = new Uint8Array(COLS*ROWS);
+let fireTimer = new Uint8Array(COLS*ROWS);
+let entities = [];                    // {x,y float tile, type, hunger, age, tx,ty, cd}
+let day = 1, tickCount = 0, paused = false, speed = 1;
+let tool = "grass";
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+let view = { w:0, h:0, ts:16, ox:0, oy:0 };
+
+const TOOLS = [
+  {id:"grass",  ic:"🌿", label:"Rumput"},
+  {id:"forest", ic:"🌲", label:"Hutan"},
+  {id:"water",  ic:"🌊", label:"Air"},
+  {id:"mount",  ic:"⛰️", label:"Gunung"},
+  {id:"sheep",  ic:"🐑", label:"Domba"},
+  {id:"wolf",   ic:"🐺", label:"Serigala"},
+  {id:"human",  ic:"🧑", label:"Manusia"},
+  {id:"fire",   ic:"🔥", label:"Api"},
+  {id:"meteor", ic:"☄️", label:"Meteor"},
+  {id:"rain",   ic:"🌧️", label:"Hujan"},
+  {id:"erase",  ic:"🧹", label:"Hapus"},
+];
+const tb = document.getElementById("toolbar");
+TOOLS.forEach(t=>{
+  const d=document.createElement("div");
+  d.className="tool"+(t.id===tool?" on":""); d.dataset.id=t.id;
+  d.innerHTML=`<span class="ic">${t.ic}</span>${t.label}`;
+  d.onclick=()=>{ tool=t.id; document.querySelectorAll(".tool").forEach(e=>e.classList.toggle("on",e.dataset.id===tool)); };
+  tb.appendChild(d);
+});
+
+function idx(x,y){ return y*COLS+x; }
+function inB(x,y){ return x>=0 && y>=0 && x<COLS && y<ROWS; }
+function tileAt(x,y){ return inB(x,y)? grid[idx(x,y)] : TILE.DEEP; }
+
+function genWorld(){
+  grid.fill(TILE.WATER); entities=[]; day=1; tickCount=0;
+  // pulau acak: beberapa blob tanah
+  for(let b=0;b<7;b++){
+    const cx=6+Math.random()*(COLS-12), cy=5+Math.random()*(ROWS-10), r=4+Math.random()*5;
+    for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+      const d=Math.hypot(x-cx,y-cy);
+      if(d<r){
+        let t = d<r*0.45 ? TILE.GRASS : (Math.random()<0.5?TILE.SAND:TILE.GRASS);
+        if(Math.random()<0.18 && t===TILE.GRASS) t=TILE.FOREST;
+        grid[idx(x,y)]=t;
+      }
+    }
+  }
+  for(let i=0;i<3;i++) spawn("sheep", 8+Math.random()*(COLS-16), 8+Math.random()*(ROWS-16));
+  for(let i=0;i<2;i++) spawn("wolf",  8+Math.random()*(COLS-16), 8+Math.random()*(ROWS-16));
+  for(let i=0;i<2;i++) spawn("human", 8+Math.random()*(COLS-16), 8+Math.random()*(ROWS-16));
+}
+
+function spawn(type,x,y){
+  if(entities.length>=MAX_ENT) return;
+  entities.push({x,y,type,hunger:30+Math.random()*40,age:Math.random()*20,cd:0,
+                 tx:x,ty:y, vx:0,vy:0});
+}
+
+function paint(cx,cy){
+  cx=Math.floor(cx); cy=Math.floor(cy);
+  if(tool==="sheep"||tool==="wolf"||tool==="human"){ spawn(tool,cx+0.5,cy+0.5); return; }
+  if(tool==="meteor"){ explode(cx,cy,3); return; }
+  if(tool==="rain"){ for(let y=cy-2;y<=cy+2;y++)for(let x=cx-2;x<=cx+2;x++)
+      if(inB(x,y)&&grid[idx(x,y)]===TILE.FIRE){grid[idx(x,y)]=TILE.GRASS;fireTimer[idx(x,y)]=0;} return; }
+  if(tool==="fire"){ if(inB(cx,cy)&&[TILE.GRASS,TILE.FOREST].includes(grid[idx(cx,cy)])){
+      grid[idx(cx,cy)]=TILE.FIRE; fireTimer[idx(cx,cy)]=30+Math.random()*40; } return; }
+  // brush tanah 2x2
+  for(let y=cy;y<cy+2;y++) for(let x=cx;x<cx+2;x++){
+    if(!inB(x,y)) continue;
+    if(tool==="grass") grid[idx(x,y)]=TILE.GRASS;
+    else if(tool==="forest") grid[idx(x,y)]=TILE.FOREST;
+    else if(tool==="water") grid[idx(x,y)]=TILE.WATER;
+    else if(tool==="mount") grid[idx(x,y)]=TILE.MOUNT;
+    else if(tool==="erase") grid[idx(x,y)]=TILE.WATER;
+  }
+}
+
+function explode(cx,cy,r){
+  for(let y=cy-r;y<=cy+r;y++) for(let x=cx-r;x<=cx+r;x++){
+    if(!inB(x,y)) continue;
+    if(Math.hypot(x-cx,y-cy)<=r){ grid[idx(x,y)] = Math.random()<0.4?TILE.WATER:TILE.SAND; fireTimer[idx(x,y)]=0; }
+  }
+  entities = entities.filter(e=>Math.hypot(e.x-cx,e.y-cy)>r+0.5);
+}
+
+/* ---------- simulasi: jalan 10x/detik, bukan tiap frame ---------- */
+function findTile(pred){
+  for(let tries=0;tries<24;tries++){
+    const x=Math.floor(Math.random()*COLS), y=Math.floor(Math.random()*ROWS);
+    if(pred(grid[idx(x,y)])) return {x:x+0.5,y:y+0.5};
+  } return null;
+}
+function nearestOf(type, e){
+  let best=null,bd=1e9;
+  for(const o of entities){ if(o.type!==type) continue;
+    const d=(o.x-e.x)**2+(o.y-e.y)**2; if(d<bd){bd=d;best=o;} }
+  return best;
+}
+function stepEntity(e){
+  e.age++; e.cd=Math.max(0,e.cd-1);
+  const here = tileAt(Math.floor(e.x),Math.floor(e.y));
+  if(here===TILE.WATER||here===TILE.DEEP){ e.hunger+=2; } // tenggelam = lapar
+  e.hunger = Math.max(0, e.hunger-0.35);
+  let target=null, speed=0.06;
+
+  if(e.type==="sheep"){
+    if(here===TILE.GRASS||here===TILE.FOREST){ e.hunger=Math.max(0,e.hunger-6); if(Math.random()<0.02) grid[idx(Math.floor(e.x),Math.floor(e.y))]=TILE.GRASS; }
+    if(e.hunger>55 && !target) target=findTile(t=>t===TILE.GRASS||t===TILE.FOREST);
+    if(e.hunger<15 && e.age>30 && e.cd===0 && entities.length<MAX_ENT){ spawn("sheep",e.x,e.y); e.cd=60; e.hunger=45; }
+  } else if(e.type==="wolf"){
+    const prey=nearestOf("sheep",e);
+    if(prey){ target={x:prey.x,y:prey.y}; speed=0.09;
+      if(Math.hypot(prey.x-e.x,prey.y-e.y)<0.6){ entities.splice(entities.indexOf(prey),1); e.hunger=10;
+        if(Math.random()<0.5 && entities.length<MAX_ENT){ spawn("wolf",e.x,e.y); } } }
+    if(e.hunger>70 && !target) target=findTile(t=>t===TILE.GRASS);
+  } else if(e.type==="human"){
+    const prey=nearestOf("sheep",e);
+    if(prey && Math.hypot(prey.x-e.x,prey.y-e.y)<0.6 && e.hunger>40){ entities.splice(entities.indexOf(prey),1); e.hunger=15; }
+    if(here===TILE.FOREST && Math.random()<0.03) grid[idx(Math.floor(e.x),Math.floor(e.y))]=TILE.GRASS; // tebang
+    if(e.hunger>60 && !target) target=findTile(t=>t===TILE.GRASS||t===TILE.FOREST);
+    if(e.hunger<20 && e.age>40 && e.cd===0 && entities.length<MAX_ENT){ spawn("human",e.x,e.y); e.cd=90; e.hunger=50; }
+  }
+  if(e.hunger>100){ e.dead=true; return; }            // mati kelaparan
+  if(e.age>600){ e.dead=true; return; }               // mati tua
+  if(target){ const dx=target.x-e.x, dy=target.y-e.y, d=Math.hypot(dx,dy)||1;
+    e.x+=dx/d*speed; e.y+=dy/d*speed; }
+  else if(Math.random()<0.08){ e.x+=(Math.random()-0.5)*1.4; e.y+=(Math.random()-0.5)*1.4; }
+  e.x=Math.max(0.5,Math.min(COLS-0.5,e.x)); e.y=Math.max(0.5,Math.min(ROWS-0.5,e.y));
+}
+function tick(){
+  if(paused) return;
+  tickCount++;
+  if(tickCount%100===0) day++;
+  // api menyebar
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+    const i=idx(x,y);
+    if(grid[i]===TILE.FIRE){
+      if(--fireTimer[i]<=0){ grid[i]=TILE.SAND; continue; }
+      if(Math.random()<0.06) for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+        const nx=x+dx, ny=y+dy;
+        if(inB(nx,ny)&&[TILE.GRASS,TILE.FOREST].includes(grid[idx(nx,ny)])){
+          grid[idx(nx,ny)]=TILE.FIRE; fireTimer[idx(nx,ny)]=30+Math.random()*40; }
+      }
+    }
+  }
+  for(const e of entities) stepEntity(e);
+  entities = entities.filter(e=>!e.dead);
+  // rumput tumbuh pelan di tanah kosong
+  if(Math.random()<0.3){ const t=findTile(v=>v===TILE.SAND); if(t) grid[idx(Math.floor(t.x),Math.floor(t.y))]=TILE.GRASS; }
+  updateHUD();
+}
+function updateHUD(){
+  const c={sheep:0,wolf:0,human:0};
+  for(const e of entities) c[e.type]++;
+  cSheep.textContent=c.sheep; cWolf.textContent=c.wolf; cHuman.textContent=c.human; cDay.textContent=day;
+}
+const cSheep=document.getElementById("cSheep"),cWolf=document.getElementById("cWolf"),
+      cHuman=document.getElementById("cHuman"),cDay=document.getElementById("cDay");
+
+/* ---------- render ---------- */
+function resize(){
+  const r=cv.parentElement.getBoundingClientRect();
+  cv.width=r.width*devicePixelRatio; cv.height=r.height*devicePixelRatio;
+  view.w=r.width; view.h=r.height;
+  view.ts=Math.floor(Math.min(r.width/COLS, r.height/ROWS));
+  view.ox=Math.floor((r.width-view.ts*COLS)/2); view.oy=Math.floor((r.height-view.ts*ROWS)/2);
+}
+function draw(){
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  ctx.fillStyle="#0b1a12"; ctx.fillRect(0,0,view.w,view.h);
+  const ts=view.ts;
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+    ctx.fillStyle=TILE_COLOR[grid[idx(x,y)]];
+    ctx.fillRect(view.ox+x*ts, view.oy+y*ts, ts, ts);
+    if(grid[idx(x,y)]===TILE.FOREST){ ctx.font=`${ts}px serif`; ctx.fillText("🌲",view.ox+x*ts+1,view.oy+y*ts+ts-2); }
+    if(grid[idx(x,y)]===TILE.FIRE){ ctx.font=`${ts}px serif`; ctx.fillText("🔥",view.ox+x*ts+1,view.oy+y*ts+ts-2); }
+  }
+  ctx.font=`${Math.max(12,ts-2)}px serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
+  const ICON={sheep:"🐑",wolf:"🐺",human:"🧑"};
+  for(const e of entities) ctx.fillText(ICON[e.type], view.ox+e.x*ts, view.oy+e.y*ts);
+  ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+}
+function loop(){ draw(); requestAnimationFrame(loop); }
+setInterval(()=>{ for(let i=0;i<speed;i++) tick(); },100);
+
+/* ---------- input: mouse + sentuh ---------- */
+let drawing=false;
+function toTile(ev){
+  const r=cv.getBoundingClientRect();
+  const p=ev.touches?ev.touches[0]:ev;
+  return { x:(p.clientX-r.left-view.ox)/view.ts, y:(p.clientY-r.top-view.oy)/view.ts };
+}
+cv.addEventListener("pointerdown",ev=>{ drawing=true; const t=toTile(ev); paint(t.x,t.y); });
+cv.addEventListener("pointermove",ev=>{ if(!drawing) return; const t=toTile(ev); paint(t.x,t.y); });
+addEventListener("pointerup",()=>drawing=false);
+addEventListener("resize",resize);
+
+document.getElementById("btnPause").onclick=e=>{ paused=!paused; e.target.textContent=paused?"▶️ Lanjut":"⏸️ Jeda"; };
+document.getElementById("btnSpeed").onclick=e=>{ speed=speed>=4?1:speed*2; e.target.textContent=`▶️ ${speed}x`; };
+document.getElementById("btnNew").onclick=()=>{ genWorld(); updateHUD(); };
+
+genWorld(); resize(); updateHUD(); loop();
+</script>
+</body>
+</html>
