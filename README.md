@@ -30,6 +30,7 @@ Repositori ini berisi kerangka dan prototipe game god-sandbox ekosistem (inspira
 - Jangan menggunakan Unity di Fase 1 dan Fase 2 karena editor terlalu berat untuk HP 4GB.
 - Jangan menambahkan dependensi berbayar atau yang memerlukan kartu kredit. Semua tool dan deploy harus gratis.
 - Jangan menyimpan kredensial, API key, atau rahasia dalam repositori ini.
+- Game wajib di bangun dalam bahasa Indonesia full. Semua teks dalam game, UI, panel, dan dokumen harus menggunakan bahasa Indonesia.
 
 ## Stack Teknologi yang Disetujui
 
