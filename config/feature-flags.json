@@ -1,0 +1,10 @@
+{
+  "seasons": false,
+  "disease": false,
+  "saveLoad": false,
+  "structures": false,
+  "magic": false,
+  "civilization": false,
+  "multiplayer": false,
+  "mods": false
+}

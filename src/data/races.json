@@ -1,0 +1,7 @@
+{
+  "human": { "hp": 100, "maxAge": 600, "speed": 0.8 },
+  "dwarf": { "hp": 120, "maxAge": 500, "speed": 0.7 },
+  "elf": { "hp": 90, "maxAge": 800, "speed": 0.9 },
+  "orc": { "hp": 150, "maxAge": 400, "speed": 0.8 },
+  "alien": { "hp": 200, "maxAge": 1000, "speed": 1.0 }
+}

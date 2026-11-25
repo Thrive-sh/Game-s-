@@ -1,0 +1,25 @@
+// src/core/bus.js
+// Event bus: antar modul berkomunikasi tanpa import langsung satu sama lain.
+
+export class Bus {
+  constructor() {
+    this.listeners = {};
+  }
+
+  on(event, callback) {
+    if (!this.listeners[event]) this.listeners[event] = [];
+    this.listeners[event].push(callback);
+  }
+
+  off(event, callback) {
+    if (!this.listeners[event]) return;
+    this.listeners[event] = this.listeners[event].filter((cb) => cb !== callback);
+  }
+
+  emit(event, data) {
+    if (!this.listeners[event]) return;
+    this.listeners[event].forEach((cb) => cb(data));
+  }
+}
+
+export const bus = new Bus();

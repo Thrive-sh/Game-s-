@@ -1,0 +1,17 @@
+{
+  "app.title": "EcoBox",
+  "app.newWorld": "New World",
+  "app.pause": "Pause",
+  "app.speed": "Speed",
+  "ui.population": "Population",
+  "ui.day": "Day",
+  "ui.sheep": "Sheep",
+  "ui.wolf": "Wolf",
+  "ui.human": "Human",
+  "tool.brush": "Brush",
+  "tool.spawn": "Spawn",
+  "tool.disaster": "Disaster",
+  "msg.sheepExtinct": "Sheep extinct!",
+  "msg.worldSaved": "World saved",
+  "msg.worldLoaded": "World loaded"
+}

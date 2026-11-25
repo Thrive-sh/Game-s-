@@ -1,0 +1,6 @@
+; Project file untuk Godot 4 (dibuat saat memulai port Fase 3)
+; Contoh isian awal:
+
+config/name = "EcoBox"
+config/version = "major.minor.patch"
+rendering/quality/drivers/compatibility = true

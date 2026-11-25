@@ -1,0 +1,5 @@
+{
+  "wood": { "name": "Kayu", "stack": 99 },
+  "stone": { "name": "Batu", "stack": 99 },
+  "food": { "name": "Makanan", "stack": 99 }
+}
